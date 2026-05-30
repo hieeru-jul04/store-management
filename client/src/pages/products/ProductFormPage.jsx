@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Alert } from '../../components/ui/Alert'
+import { useAlert } from '../../hooks/useAlert'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -22,8 +22,7 @@ export function ProductFormPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
   const [categories, setCategories] = useState([])
-  const [errors, setErrors] = useState({})
-  const [apiError, setApiError] = useState('')
+  const { showAlert } = useAlert()
   const [loading, setLoading] = useState(false)
   const [pageLoading, setPageLoading] = useState(isEdit)
 
@@ -50,17 +49,13 @@ export function ProductFormPage() {
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    setErrors((prev) => ({ ...prev, [name]: '' }))
-    setApiError('')
   }
 
   function validate() {
-    const next = {}
-    if (!form.name.trim()) next.name = 'Vui lòng nhập tên sản phẩm'
-    if (!form.sku.trim()) next.sku = 'Vui lòng nhập SKU'
-    if (!form.categoryId) next.categoryId = 'Chọn danh mục'
-    setErrors(next)
-    return Object.keys(next).length === 0
+    if (!form.name.trim()) { showAlert('Lỗi', 'Vui lòng nhập tên sản phẩm', 'error'); return false }
+    if (!form.sku.trim()) { showAlert('Lỗi', 'Vui lòng nhập SKU', 'error'); return false }
+    if (!form.categoryId) { showAlert('Lỗi', 'Chọn danh mục', 'error'); return false }
+    return true
   }
 
   async function handleSubmit(e) {
@@ -82,8 +77,9 @@ export function ProductFormPage() {
         await createProduct(payload)
       }
       navigate('/products')
+      showAlert('Thành công', isEdit ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm thành công', 'success')
     } catch (err) {
-      setApiError(err.message || 'Lưu thất bại')
+      showAlert('Lỗi', err.message || 'Lưu thất bại', 'error')
     } finally {
       setLoading(false)
     }
@@ -111,15 +107,12 @@ export function ProductFormPage() {
         onSubmit={handleSubmit}
         className="max-w-2xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
-        {apiError && <Alert className="mb-2">{apiError}</Alert>}
-
         <Input
           id="name"
           name="name"
           label="Tên sản phẩm"
           value={form.name}
           onChange={handleChange}
-          error={errors.name}
         />
         <Input
           id="sku"
@@ -127,7 +120,6 @@ export function ProductFormPage() {
           label="Mã SKU"
           value={form.sku}
           onChange={handleChange}
-          error={errors.sku}
         />
         <Select
           id="categoryId"
@@ -135,7 +127,6 @@ export function ProductFormPage() {
           label="Danh mục"
           value={form.categoryId}
           onChange={handleChange}
-          error={errors.categoryId}
           placeholder="-- Chọn danh mục --"
           options={categories.map((c) => ({ value: c.id, label: c.name }))}
         />

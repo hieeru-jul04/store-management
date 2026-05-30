@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Alert } from '../../components/ui/Alert'
+import { useAlert } from '../../hooks/useAlert'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useAuth } from '../../hooks/useAuth'
@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 export function RegisterPage() {
   const navigate = useNavigate()
   const { register, loading } = useAuth()
+  const { showAlert } = useAlert()
   const [form, setForm] = useState({
     fullName: '',
     shopName: '',
@@ -15,35 +16,29 @@ export function RegisterPage() {
     password: '',
     confirmPassword: '',
   })
-  const [errors, setErrors] = useState({})
-  const [apiError, setApiError] = useState('')
 
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    setErrors((prev) => ({ ...prev, [name]: '' }))
-    setApiError('')
   }
 
   function validate() {
-    const next = {}
-    if (!form.fullName.trim()) next.fullName = 'Vui lòng nhập họ tên'
-    if (!form.shopName.trim()) next.shopName = 'Vui lòng nhập tên cửa hàng'
+    if (!form.fullName.trim()) { showAlert('Lỗi', 'Vui lòng nhập họ tên', 'error'); return false }
+    if (!form.shopName.trim()) { showAlert('Lỗi', 'Vui lòng nhập tên cửa hàng', 'error'); return false }
     if (!form.username.trim()) {
-      next.username = 'Vui lòng nhập tên đăng nhập'
+      showAlert('Lỗi', 'Vui lòng nhập tên đăng nhập', 'error'); return false
     } else if (form.username.length < 3 || form.username.length > 20) {
-      next.username = 'Tên đăng nhập phải từ 3–20 ký tự'
+      showAlert('Lỗi', 'Tên đăng nhập phải từ 3–20 ký tự', 'error'); return false
     }
     if (!form.password) {
-      next.password = 'Vui lòng nhập mật khẩu'
+      showAlert('Lỗi', 'Vui lòng nhập mật khẩu', 'error'); return false
     } else if (form.password.length < 6) {
-      next.password = 'Mật khẩu phải có ít nhất 6 ký tự'
+      showAlert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự', 'error'); return false
     }
     if (form.password !== form.confirmPassword) {
-      next.confirmPassword = 'Mật khẩu xác nhận không khớp'
+      showAlert('Lỗi', 'Mật khẩu xác nhận không khớp', 'error'); return false
     }
-    setErrors(next)
-    return Object.keys(next).length === 0
+    return true
   }
 
   async function handleSubmit(e) {
@@ -63,7 +58,7 @@ export function RegisterPage() {
         err.response?.data?.message ||
         err.message ||
         'Đăng ký thất bại. Vui lòng thử lại.'
-      setApiError(message)
+      showAlert('Lỗi đăng ký', message, 'error')
     }
   }
 
@@ -76,8 +71,6 @@ export function RegisterPage() {
         </p>
       </div>
 
-      {apiError && <Alert className="mb-4">{apiError}</Alert>}
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="fullName"
@@ -86,7 +79,6 @@ export function RegisterPage() {
           placeholder="Nguyễn Văn A"
           value={form.fullName}
           onChange={handleChange}
-          error={errors.fullName}
           autoComplete="name"
         />
         <Input
@@ -96,7 +88,6 @@ export function RegisterPage() {
           placeholder="Cửa hàng ABC"
           value={form.shopName}
           onChange={handleChange}
-          error={errors.shopName}
         />
         <Input
           id="username"
@@ -105,7 +96,6 @@ export function RegisterPage() {
           placeholder="shop_abc"
           value={form.username}
           onChange={handleChange}
-          error={errors.username}
           autoComplete="username"
         />
         <Input
@@ -116,7 +106,6 @@ export function RegisterPage() {
           placeholder="Ít nhất 6 ký tự"
           value={form.password}
           onChange={handleChange}
-          error={errors.password}
           autoComplete="new-password"
         />
         <Input
@@ -127,7 +116,6 @@ export function RegisterPage() {
           placeholder="Nhập lại mật khẩu"
           value={form.confirmPassword}
           onChange={handleChange}
-          error={errors.confirmPassword}
           autoComplete="new-password"
         />
 

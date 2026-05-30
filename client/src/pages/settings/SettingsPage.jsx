@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert } from '../../components/ui/Alert'
+import { useAlert } from '../../hooks/useAlert'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -17,7 +17,7 @@ export function SettingsPage() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
+  const { showAlert } = useAlert()
 
   useEffect(() => {
     getSettings()
@@ -36,7 +36,6 @@ export function SettingsPage() {
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    setMessage({ type: '', text: '' })
   }
 
   async function handleSubmit(e) {
@@ -50,9 +49,9 @@ export function SettingsPage() {
         taxCode: form.taxCode.trim(),
         lowStockThreshold: Number(form.lowStockThreshold) || 10,
       })
-      setMessage({ type: 'success', text: 'Đã lưu cài đặt thành công' })
+      showAlert('Thành công', 'Đã lưu cài đặt thành công', 'success')
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'Lưu thất bại' })
+      showAlert('Lỗi', err.message || 'Lưu thất bại', 'error')
     } finally {
       setSaving(false)
     }
@@ -139,12 +138,6 @@ export function SettingsPage() {
             Đổi mật khẩu sẽ khả dụng khi backend hỗ trợ API cập nhật tài khoản.
           </p>
         </section>
-
-        {message.text && (
-          <Alert type={message.type === 'success' ? 'success' : 'error'}>
-            {message.text}
-          </Alert>
-        )}
 
         <Button type="submit" loading={saving} className="max-w-xs">
           Lưu cài đặt

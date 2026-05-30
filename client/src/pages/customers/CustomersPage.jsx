@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAlert } from '../../hooks/useAlert'
 import { Button } from '../../components/ui/Button'
 import { ConfirmModal } from '../../components/ui/Modal'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -6,6 +7,7 @@ import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { SearchInput } from '../../components/ui/SearchInput'
+import { CustomerDetailsModal } from '../../components/customers/CustomerDetailsModal'
 import { createCustomer, deleteCustomer, getCustomers, updateCustomer } from '../../api/customer.api'
 import { formatDateShort } from '../../utils/format'
 
@@ -18,10 +20,11 @@ export function CustomersPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
-  const [error, setError] = useState('')
+  const { showAlert } = useAlert()
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [viewingCustomer, setViewingCustomer] = useState(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -48,7 +51,6 @@ export function CustomersPage() {
   function openCreate() {
     setEditing(null)
     setForm(emptyForm)
-    setError('')
     setModalOpen(true)
   }
 
@@ -61,13 +63,12 @@ export function CustomersPage() {
       address: customer.address || '',
       note: customer.note || '',
     })
-    setError('')
     setModalOpen(true)
   }
 
   async function handleSave() {
     if (!form.name.trim() || !form.phone.trim()) {
-      setError('Họ tên và số điện thoại là bắt buộc')
+      showAlert('Lỗi', 'Họ tên và số điện thoại là bắt buộc', 'error')
       return
     }
     setSaving(true)
@@ -86,8 +87,9 @@ export function CustomersPage() {
       }
       setModalOpen(false)
       load()
+      showAlert('Thành công', editing ? 'Cập nhật thành công' : 'Thêm mới thành công', 'success')
     } catch (err) {
-      setError(err.message)
+      showAlert('Lỗi', err.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -100,8 +102,9 @@ export function CustomersPage() {
       await deleteCustomer(deleteId)
       setDeleteId(null)
       load()
+      showAlert('Thành công', 'Xóa khách hàng thành công', 'success')
     } catch (err) {
-      alert(err.message)
+      showAlert('Lỗi', err.message, 'error')
     } finally {
       setDeleting(false)
     }
@@ -168,6 +171,13 @@ export function CustomersPage() {
                     {formatDateShort(customer.createdAt)}
                   </td>
                   <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setViewingCustomer(customer)}
+                      className="mr-3 text-slate-600 hover:text-slate-900"
+                    >
+                      Xem
+                    </button>
                     <button
                       type="button"
                       onClick={() => openEdit(customer)}
@@ -238,7 +248,6 @@ export function CustomersPage() {
             />
           </label>
         </div>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </Modal>
 
       <ConfirmModal
@@ -250,6 +259,12 @@ export function CustomersPage() {
         confirmLabel="Xóa"
         loading={deleting}
         danger
+      />
+
+      <CustomerDetailsModal
+        open={Boolean(viewingCustomer)}
+        customer={viewingCustomer}
+        onClose={() => setViewingCustomer(null)}
       />
     </>
   )

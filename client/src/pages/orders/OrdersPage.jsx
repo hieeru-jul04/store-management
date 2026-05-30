@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAlert } from '../../hooks/useAlert'
 import { OrderStatusBadge } from '../../components/orders/OrderStatusBadge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -29,12 +30,11 @@ export function OrdersPage() {
     shippingAddress: '',
     note: '',
     items: [{ productId: '', quantity: '1', price: '' }],
-    shippingToCustomerFee: '0',
+    shippingToCustomerFee: '',
     createdAt: '',
   })
   const [saving, setSaving] = useState(false)
-  const [formError, setFormError] = useState('')
-
+  const { showAlert } = useAlert()
   const load = useCallback(() => {
     setLoading(true)
     getOrders()
@@ -67,6 +67,16 @@ export function OrdersPage() {
           o.phone?.includes(q),
       )
     }
+    
+    // Sắp xếp theo ngày khách đặt (createdAt) giảm dần
+    // Nếu trùng ngày, ưu tiên đơn tạo sau (id giảm dần)
+    list = [...list].sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime()
+      const dateB = new Date(b.createdAt).getTime()
+      if (dateB !== dateA) return dateB - dateA
+      return b.id - a.id
+    })
+
     return list
   }, [orders, search, statusFilter, fromDate, toDate])
 
@@ -82,10 +92,9 @@ export function OrdersPage() {
       shippingAddress: '',
       note: '',
       items: [{ productId: '', quantity: '1', price: '' }],
-      shippingToCustomerFee: '0',
+      shippingToCustomerFee: '',
       createdAt: '',
     })
-    setFormError('')
     setCreateOpen(true)
   }
 
@@ -119,12 +128,12 @@ export function OrdersPage() {
 
   async function handleCreate() {
     if (!form.customerName.trim()) {
-      setFormError('Vui lòng nhập tên khách hàng')
+      showAlert('Lỗi', 'Vui lòng nhập tên khách hàng', 'error')
       return
     }
     
     if (form.items.length === 0) {
-      setFormError('Cần ít nhất 1 sản phẩm')
+      showAlert('Lỗi', 'Cần ít nhất 1 sản phẩm', 'error')
       return
     }
 
@@ -133,17 +142,17 @@ export function OrdersPage() {
       const item = form.items[i]
       const product = products.find((p) => String(p.id) === String(item.productId))
       if (!product) {
-        setFormError(`Chọn sản phẩm dòng ${i + 1}`)
+        showAlert('Lỗi', `Chọn sản phẩm dòng ${i + 1}`, 'error')
         return
       }
       const qty = Number(item.quantity)
       if (qty <= 0 || qty > product.stock) {
-        setFormError(`Số lượng dòng ${i + 1} không hợp lệ (tồn: ${product.stock})`)
+        showAlert('Lỗi', `Số lượng dòng ${i + 1} không hợp lệ (tồn: ${product.stock})`, 'error')
         return
       }
       const priceNum = Number(item.price)
       if (isNaN(priceNum) || priceNum < 0) {
-        setFormError(`Giá bán dòng ${i + 1} không hợp lệ`)
+        showAlert('Lỗi', `Giá bán dòng ${i + 1} không hợp lệ`, 'error')
         return
       }
       payloadItems.push({
@@ -168,8 +177,9 @@ export function OrdersPage() {
       })
       setCreateOpen(false)
       load()
+      showAlert('Thành công', 'Tạo đơn hàng thành công', 'success')
     } catch (err) {
-      setFormError(err.message)
+      showAlert('Lỗi', err.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -295,9 +305,6 @@ export function OrdersPage() {
         }
       >
         <div className="space-y-4">
-          {formError && (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
-          )}
           <Select
             label="Khách hàng có sẵn (tuỳ chọn)"
             value={form.customerId}

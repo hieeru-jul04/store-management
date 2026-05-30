@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Alert } from '../../components/ui/Alert'
+import { useAlert } from '../../hooks/useAlert'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useAuth } from '../../hooks/useAuth'
@@ -8,23 +8,18 @@ import { useAuth } from '../../hooks/useAuth'
 export function LoginPage() {
   const navigate = useNavigate()
   const { login, loading } = useAuth()
+  const { showAlert } = useAlert()
   const [form, setForm] = useState({ username: '', password: '' })
-  const [errors, setErrors] = useState({})
-  const [apiError, setApiError] = useState('')
 
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    setErrors((prev) => ({ ...prev, [name]: '' }))
-    setApiError('')
   }
 
   function validate() {
-    const next = {}
-    if (!form.username.trim()) next.username = 'Vui lòng nhập tên đăng nhập'
-    if (!form.password) next.password = 'Vui lòng nhập mật khẩu'
-    setErrors(next)
-    return Object.keys(next).length === 0
+    if (!form.username.trim()) { showAlert('Lỗi', 'Vui lòng nhập tên đăng nhập', 'error'); return false }
+    if (!form.password) { showAlert('Lỗi', 'Vui lòng nhập mật khẩu', 'error'); return false }
+    return true
   }
 
   async function handleSubmit(e) {
@@ -42,7 +37,7 @@ export function LoginPage() {
         err.response?.data?.message ||
         err.message ||
         'Đăng nhập thất bại. Vui lòng thử lại.'
-      setApiError(message)
+      showAlert('Lỗi đăng nhập', message, 'error')
     }
   }
 
@@ -55,8 +50,6 @@ export function LoginPage() {
         </p>
       </div>
 
-      {apiError && <Alert className="mb-4">{apiError}</Alert>}
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="username"
@@ -65,7 +58,6 @@ export function LoginPage() {
           placeholder="username_cua_ban"
           value={form.username}
           onChange={handleChange}
-          error={errors.username}
           autoComplete="username"
         />
         <Input
@@ -76,7 +68,6 @@ export function LoginPage() {
           placeholder="••••••••"
           value={form.password}
           onChange={handleChange}
-          error={errors.password}
           autoComplete="current-password"
         />
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useAlert } from '../../hooks/useAlert'
 import { Button } from '../../components/ui/Button'
 import { ConfirmModal } from '../../components/ui/Modal'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -13,7 +14,7 @@ export function CategoriesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [name, setName] = useState('')
-  const [error, setError] = useState('')
+  const { showAlert } = useAlert()
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -32,20 +33,18 @@ export function CategoriesPage() {
   function openCreate() {
     setEditing(null)
     setName('')
-    setError('')
     setModalOpen(true)
   }
 
   function openEdit(cat) {
     setEditing(cat)
     setName(cat.name)
-    setError('')
     setModalOpen(true)
   }
 
   async function handleSave() {
     if (!name.trim()) {
-      setError('Vui lòng nhập tên danh mục')
+      showAlert('Lỗi', 'Vui lòng nhập tên danh mục', 'error')
       return
     }
     setSaving(true)
@@ -57,8 +56,9 @@ export function CategoriesPage() {
       }
       setModalOpen(false)
       load()
+      showAlert('Thành công', editing ? 'Cập nhật danh mục thành công' : 'Thêm danh mục thành công', 'success')
     } catch (err) {
-      setError(err.message)
+      showAlert('Lỗi', err.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -71,8 +71,9 @@ export function CategoriesPage() {
       await deleteCategory(deleteId)
       setDeleteId(null)
       load()
+      showAlert('Thành công', 'Xóa danh mục thành công', 'success')
     } catch (err) {
-      alert(err.message)
+      showAlert('Lỗi', err.message, 'error')
     } finally {
       setDeleting(false)
     }
@@ -153,9 +154,7 @@ export function CategoriesPage() {
           value={name}
           onChange={(e) => {
             setName(e.target.value)
-            setError('')
           }}
-          error={error}
           autoFocus
         />
       </Modal>

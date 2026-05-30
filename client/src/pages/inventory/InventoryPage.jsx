@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAlert } from '../../hooks/useAlert'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -19,7 +20,7 @@ export function InventoryPage() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ productId: '', type: 'out', quantity: '', note: '' })
-  const [error, setError] = useState('')
+  const { showAlert } = useAlert()
   const [saving, setSaving] = useState(false)
   const [batchImportOpen, setBatchImportOpen] = useState(false)
 
@@ -44,11 +45,11 @@ export function InventoryPage() {
 
   async function handleAdjust() {
     if (!form.productId) {
-      setError('Chọn sản phẩm')
+      showAlert('Lỗi', 'Chọn sản phẩm', 'error')
       return
     }
     if (!form.quantity || Number(form.quantity) <= 0) {
-      setError('Số lượng không hợp lệ')
+      showAlert('Lỗi', 'Số lượng không hợp lệ', 'error')
       return
     }
     setSaving(true)
@@ -62,8 +63,9 @@ export function InventoryPage() {
       setModalOpen(false)
       setForm({ productId: '', type: 'out', quantity: '', note: '' })
       load()
+      showAlert('Thành công', 'Điều chỉnh tồn kho thành công', 'success')
     } catch (err) {
-      setError(err.message)
+      showAlert('Lỗi', err.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -76,7 +78,7 @@ export function InventoryPage() {
         description="Theo dõi tồn kho và lịch sử nhập/xuất"
         action={
           <div className="flex gap-2">
-            <Button variant="secondary" className="!w-auto" onClick={() => { setError(''); setModalOpen(true) }}>
+            <Button variant="secondary" className="!w-auto" onClick={() => setModalOpen(true)}>
               - Xuất kho (Hư hỏng)
             </Button>
             <Button className="!w-auto bg-emerald-600 hover:bg-emerald-700" onClick={() => setBatchImportOpen(true)}>
@@ -196,9 +198,6 @@ export function InventoryPage() {
         }
       >
         <div className="space-y-4">
-          {error && (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-          )}
           <Select
             label="Sản phẩm"
             value={form.productId}
